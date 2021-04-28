@@ -113,7 +113,6 @@ class rcn():
         u = self.u
         d = self.d
         y = self.div
-        c = self.c
         r = self.r
         dt = self.dt
         i0 = self.i0
@@ -154,11 +153,11 @@ if __name__ == '__main__':
     #dates = []
     alpha = 0.9
     beta = 0.8
-    tree = rcn(r, dt, I0, div, u, d, c)
+    tree = rcn(r, dt, I0, div, u, d)
     #s_ex, s_cum = tree.stock_tree()
-    brcn = tree.price_brcn(alpha=alpha, beta=beta, dates=dates)
-    rcn = tree.price_rcn(alpha=alpha, dates=dates)
-    recomb_rcn = tree.recomb_rcn(alpha=alpha, dates=dates)
+    brcn = tree.price_brcn(alpha=alpha, beta=beta, c=c, dates=dates)
+    rcn = tree.price_rcn(alpha=alpha, c=c, dates=dates)
+    recomb_rcn = tree.recomb_rcn(alpha=alpha, c=c, dates=dates)
     #print('brcn=', brcn)
     print(' rcn=', rcn)
     print('recomb rcn=', recomb_rcn)
