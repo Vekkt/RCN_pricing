@@ -18,11 +18,11 @@ class Binomial():
         self.attr['q'] = q
         self.attr['ind'] = []
 
-    def price_bond(self, c):
+    def price_bond(self, c, fv=1):
         T = self.attr['T']
         r = self.attr['r']
         # We assume continuous compounding
-        return sum([c * exp(-r * dt * t) for t in range(1, T)]) + (1+c) * exp(-r * dt * T)
+        return sum([c * exp(-r * dt * t) for t in range(1, T)]) + (fv+c) * exp(-r * dt * T)
 
     def price_put(self, K, type='E', dates=None, pen=0.):
         return self.price(lambda s: put(s, K), type, dates, pen)
@@ -122,6 +122,11 @@ class Binomial():
 
         p = np.zeros_like(underlying)
 
+        # Populate the payoff according to the barrier type
+        # Kock-OUT = payoff is 0 if barrier has ever been breached
+        # Kock-IN = payoff is not 0 if barrier has ever been breached
+        # ind is the set of leaves that come from a node where 
+        # the barrier has been breached at some point
         for i in range(2**(T-1)):
             p[i, T-1] = payoff(underlying[i, T-1])
             if type[1] == 'I' and i not in ind:
@@ -129,6 +134,7 @@ class Binomial():
             elif type[1] == 'O' and i in ind:
                 p[i, T-1] = 0
 
+        # Populate backwards
         for j in reversed(range(T-1)):
             for i in range(2**j):
                 p[i, j] = g * (q*p[2*i, j+1] + (1-q)*p[2*i+1, j+1])
@@ -141,9 +147,8 @@ class Binomial():
         if beta is None and not callable:
             bond = self.price_bond(c)
             put = self.price_put(K)[0, 0]
-            print(bond, put/S0)
             return bond - put / S0
-
+        # Barrier RCN
         if beta is not None and not callable:
             bond = self.price_bond(c)
             ki_put = self.price_barrier_put(K, beta, type='KI')[0, 0]
@@ -159,7 +164,7 @@ def put(S, K):
 
 
 if __name__ == '__main__':
-    T = 12
+    T = 4
     dt = 1/T
     r = 0.02
     S0 = 100
@@ -172,6 +177,13 @@ if __name__ == '__main__':
     alpha = 0.9
     beta = 0.8
 
-    tree = Binomial(r, T, dt, S0, u, d)
-    print('{:15} : {:.4f}'.format('rcn', tree.price_RCN(alpha, c)))
-    print('{:15} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta)))
+    tree = Binomial(r, T, dt, S0, u, d, y)
+    print("underlying asset price tree:")
+    print(tree.underlying_price())
+    print("Knock-In put price tree:")
+    print(tree.price_barrier_put(k, beta, type='KI'))
+    print("Knock-In call price tree:")
+    print(tree.price_barrier_call(K, beta, type='KI'))
+
+    # print('{:15} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c)))
+    # print('{:15} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta)))
