@@ -17,9 +17,6 @@ class Binomial():
         self.attr['d'] = d
         self.attr['q'] = q
         self.attr['ind'] = []
-        self.attr['asset'] = []
-
-        self.attr['asset'] = self.underlying_price(beta)
 
     def price_bond(self, c):
         T = self.attr['T']
@@ -40,7 +37,7 @@ class Binomial():
         return self.price_barrier(lambda s: put(s, K), beta, type)
 
     def price(self, payoff, type='E', dates=None, pen=0.):
-        r, T, dt, S0, y, u, d, q, _, _ = self.attr.values()
+        r, T, dt, S0, y, u, d, q, _= self.attr.values()
         if type == 'B':
             assert(len(dates) >= 1 and (T-1) in dates)
 
@@ -70,7 +67,7 @@ class Binomial():
         return p
 
     def underlying_price(self, beta=None):
-        r, T, dt, S0, y, u, d, q, _, _ = self.attr.values()
+        r, T, dt, S0, y, u, d, q, _= self.attr.values()
 
         g = exp(-r*dt)
         if q is None:
@@ -116,7 +113,8 @@ class Binomial():
         return s_ex
 
     def price_barrier(self, payoff, beta, type='KI'):
-        r, T, dt, _, _, u, d, q, ind, underlying = self.attr.values()
+        underlying = self.underlying_price(beta)
+        r, T, dt, _, _, u, d, q, ind = self.attr.values()
 
         g = exp(-r*dt)
         if q is None:
@@ -143,6 +141,7 @@ class Binomial():
         if beta is None and not callable:
             bond = self.price_bond(c)
             put = self.price_put(K)[0, 0]
+            print(bond, put/S0)
             return bond - put / S0
 
         if beta is not None and not callable:
