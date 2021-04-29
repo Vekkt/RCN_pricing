@@ -54,14 +54,14 @@ def calibration():
     # Optimize using call prices
     def f(x):
         u, d = x
-        tree = Binomial(r, T, dt, I0, u, d, y/12, q=.5)
+        tree = Binomial(r, T, dt, I0, u, d, y, q=.5)
         prices = pd.Series([tree.price_call(k)[0, 0] for k in K], name='simc')
         return ((C-prices)**2).sum()
 
     # Optimize using put prices
     def g(x):
         u, d = x
-        tree = Binomial(r, T, dt, I0, u, d, y/12, q=.5)
+        tree = Binomial(r, T, dt, I0, u, d, y, q=.5)
         prices = pd.Series([tree.price_put(k)[0, 0] for k in K], name='simp')
         return ((P-prices)**2).sum()
 
@@ -89,7 +89,7 @@ def calibration():
         print('{:15}{:.4f}'.format('Down', d))
         print('-'*30)
 
-    tree = Binomial(r, T, dt, I0, u, d, y/12, q=.5)
+    tree = Binomial(r, T, dt, I0, u, d, y, q=.5)
 
     simc = pd.Series([tree.price_call(k)[0, 0] for k in K], name='simc')
     simc = pd.concat([simc, C], axis=1).set_index(K.values)
