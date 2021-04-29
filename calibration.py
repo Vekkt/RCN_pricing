@@ -98,9 +98,10 @@ def calibration():
 
     sim = pd.concat([simc, simp], axis=1)
     sim.index.name = 'Strike'
+    
     # print(sim)
-    plt.plot(sim)
-    plt.show()
+    # plt.plot(sim)
+    # plt.show()
     return r, y, u, d
 
 if __name__ == '__main__':
