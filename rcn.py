@@ -19,9 +19,8 @@ class rcn():
         self.u = u
         self.d = d
         self.t_end = T   # maturity date in numbers of increment
-        self.bond = sum(c * exp(-r * dt * t) for t in range(1, self.t_end))\
-            + (1 + c)*exp(-r*dt*self.t_end)  # bond price,never used
-        self.q = 1/2
+        self.bond = sum(c * exp(-r * dt * t) for t in range(1, self.t_end)) + (1 + c)*exp(-r*dt*self.t_end)  # bond price,never used
+        self.q = (exp(r * dt) - d ) / (u-d)
 
     def stock_tree(self, beta=0):
         """Simulates the underlying stock"""
@@ -34,7 +33,6 @@ class rcn():
 
         s_ex = np.zeros([2 ** T, T + 1])
         s_ex[0, 0] = self.i0
-        s_cum = s_ex.copy()
 
         for j in range(1, T + 1):
             for i in np.nonzero(s_ex[:, j - 1])[0]:
