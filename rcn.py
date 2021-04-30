@@ -78,6 +78,10 @@ class rcn():
                 if callable and dates is not None and j in dates:
                     # if RCN is callable select the minimum of the continuation price and full repayement
                     rcn[i, T - j] = min(rcn[i, T - j], 1 + c)
+                    # if 1 + c > rcn[i, T - j]:
+                    #     print('Exercise early')
+                    # else:
+                    #     print('Continue')
         # subtract the coupon payment at date t=0 since no coupon is paid at this date
 
         return rcn[0, 0] - c
@@ -151,27 +155,29 @@ class rcn():
 
 
 if __name__ == '__main__':
-    T = 2
+    T = 12
     dt = 1 / 12
-    r = 0.02
+    r = -0.0078
     S0 = 100
-    u = 2
-    d = 0.5
-    y = 0.01
+    u = 1.0826
+    d = 0.9685
+    y = 0.0278
     k = 100
     c = 0.
     K = 100
-    alpha = 1
-    beta = .6
+    from binomial import Binomial
 
     dates = [i for i in range(int(T/dt)+1)]
     #dates = []
+    note = rcn(r, dt, S0, y, u, d, c, T=12, q=None)
+    T = 12
+    alpha = 1
+    c = 0.1
+    beta = 0.8
+    dates = [j for j in range(1, T)]
+    RCN = note.price_rcn(alpha=alpha, c=c, dates=dates)
+    BRCN = note.price_brcn(alpha=alpha, c=c, beta=0.8, dates=dates)
+    print('Price of callable simple RCN {:.6f}\nPrice of callable barrier RCN {:.6f}'.format(RCN, BRCN))
+    print(note.price_rcn(alpha, c))
+    print(note.price_brcn(alpha, beta, c))
 
-    tree = rcn(r, dt, S0, y, u, d, c, T)
-    #s_ex, s_cum = tree.stock_tree()
-    brcn = tree.price_brcn(alpha=alpha, beta=beta, c=c, dates=dates)
-    rcn = tree.price_rcn(alpha=alpha, c=c, dates=dates)
-    recomb_rcn = tree.recomb_rcn(alpha=alpha, c=c, dates=dates)
-    print('brcn=', brcn)
-    print(' rcn=', rcn)
-    print('recomb rcn=', recomb_rcn)
