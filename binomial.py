@@ -62,14 +62,16 @@ class Binomial():
                 # S_{t+1} = S^c_{t+1} * (1 - ∂)
                 S = S0 * u**(j-i) * d**i * (1-y)**j
                 s_ex[i,j] = S
-                if type == 'A':  # American
+                if type == 'A': # American
                     p[i, j] = max(payoff(S), p[i, j])
-                if type == 'B' and dates is not None and j in dates:  # Bermudan
+                if type == 'B' and dates is not None and j in dates: # Bermudan
                     p[i, j] = max(payoff(S), p[i, j])
-                if type == 'G':  # Game
+                if type == 'G': # Game
                     p[i, j] = max(min(p[i, j], pen+payoff(S)), payoff(S))
         if verbose:
+            print('Underlying price')
             print(s_ex)
+            print('Option price')
             print(p)
         return p
 
@@ -119,6 +121,7 @@ class Binomial():
             self.attr['ind'] = list(set(ind.copy()))
         
         if verbose:
+            print('Underlying price')
             print(s_ex)
         return s_ex
 
@@ -150,6 +153,7 @@ class Binomial():
                 p[i, j] = g * (q*p[2*i, j+1] + (1-q)*p[2*i+1, j+1])
 
         if verbose:
+            print('Option price:')
             print(p)
         return p
 
@@ -191,7 +195,7 @@ if __name__ == '__main__':
 
     tree = Binomial(r, T, dt, S0, u, d, y,q=0.5)
 
-    verbose = False
+    verbose = True
     print('{:10} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c, verbose=verbose)))
     print('{:10} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta, verbose=verbose)))
     print('{:10} : {:.4f}'.format('bond', tree.price_bond(c)))
