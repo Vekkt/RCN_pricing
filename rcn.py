@@ -19,10 +19,12 @@ class rcn():
         self.u = u
         self.d = d
         self.t_end = T   # maturity date in numbers of increment
+        c = c * dt
         self.bond = sum(c * exp(-r * dt * t) for t in range(1, self.t_end)) + (1 + c)*exp(-r*dt*self.t_end)  # bond price,never used
         if q is None:
             q = (exp(r * dt) - d) / (u-d)
         self.q = q
+
 
     def stock_tree(self, beta=0):
         """Simulates the underlying stock"""
@@ -61,8 +63,8 @@ class rcn():
         dt = self.dt
         s = self.stock_tree()  # call the underlying tree
         q = self.q  # prob of going up under Q
-
         rcn = np.zeros([2 ** T, T + 1])  # initialize the matrix
+        c = c * dt #correct for annual rate
         rcn[:, -1] = c + self.payoff(s[:, -1], alpha)  # payoff at maturity
         #(s)
         if dates:
@@ -86,6 +88,7 @@ class rcn():
         r = self.r
         dt = self.dt
         s = self.stock_tree(beta)  # call the underlying tree
+        c = c * dt #correct for annual rate
 
         brcn = np.zeros([2 ** T, T + 1])  # initialize the matrix
         # payoff with above strike
@@ -123,6 +126,7 @@ class rcn():
         r = self.r
         dt = self.dt
         i0 = self.i0
+        c = c * dt #correct for annual rate
 
         if dates:
             self.callable = True

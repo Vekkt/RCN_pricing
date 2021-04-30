@@ -37,7 +37,7 @@ class Binomial():
     def price_barrier_put(self, K, beta, type='KI', verbose=False):
         return self.price_barrier(lambda s: put(s, K), beta, type, verbose)
 
-        
+
 
     def price(self, payoff, type='E', dates=None, pen=0., verbose=False):
         r, T, dt, S0, y, u, d, q, _= self.attr.values()
