@@ -11,7 +11,7 @@ class rcn():
     down factor d
     coupon rate c"""
 
-    def __init__(self, r, dt, i0, div, u, d, c, T):
+    def __init__(self, r, dt, i0, div, u, d, c, T, q=None):
         self.r = r  # interest rate
         self.dt = dt  # time increment
         self.i0 = i0  # initial value of the underlying
@@ -20,7 +20,9 @@ class rcn():
         self.d = d
         self.t_end = T   # maturity date in numbers of increment
         self.bond = sum(c * exp(-r * dt * t) for t in range(1, self.t_end)) + (1 + c)*exp(-r*dt*self.t_end)  # bond price,never used
-        self.q = (exp(r * dt) - d ) / (u-d)
+        if q is None:
+            q = (exp(r * dt) - d) / (u-d)
+        self.q = q
 
     def stock_tree(self, beta=0):
         """Simulates the underlying stock"""
@@ -42,7 +44,7 @@ class rcn():
                 if beta:
                     if s_ex[i, j - 1] <= beta * i0:
                         self.ind.extend(
-                            [2*(T - (j - 1)) * i + n for n in range(2*(T - (j-1)))])
+                            [2**(T - (j - 1)) * i + n for n in range(2**(T - (j-1)))])
                         #if the stock price is below the barrier then all the state this node leads to in the last period
                         #will be stored
 
@@ -62,8 +64,7 @@ class rcn():
 
         rcn = np.zeros([2 ** T, T + 1])  # initialize the matrix
         rcn[:, -1] = c + self.payoff(s[:, -1], alpha)  # payoff at maturity
-        #print(rcn[:, -1])
-
+        #(s)
         if dates:
             self.callable = True
 
@@ -75,8 +76,8 @@ class rcn():
                 if callable and dates is not None and j in dates:
                     # if RCN is callable select the minimum of the continuation price and full repayement
                     rcn[i, T - j] = min(rcn[i, T - j], 1 + c)
-        # print(rcn)
         # subtract the coupon payment at date t=0 since no coupon is paid at this date
+
         return rcn[0, 0] - c
 
     def price_brcn(self, alpha, beta, c, dates=None):
@@ -167,7 +168,6 @@ if __name__ == '__main__':
     brcn = tree.price_brcn(alpha=alpha, beta=beta, c=c, dates=dates)
     rcn = tree.price_rcn(alpha=alpha, c=c, dates=dates)
     recomb_rcn = tree.recomb_rcn(alpha=alpha, c=c, dates=dates)
-    #print('brcn=', brcn)
-    # print(' rcn=', rcn)
-    # print('recomb rcn=', recomb_rcn)
-    # print('brcn=', brcn)
+    print('brcn=', brcn)
+    print(' rcn=', rcn)
+    print('recomb rcn=', recomb_rcn)

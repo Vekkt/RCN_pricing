@@ -131,7 +131,6 @@ class Binomial():
     def price_barrier(self, payoff, beta, type='KI',verbose=False):
         underlying = self.underlying_price(beta, verbose)
         r, T, dt, _, _, u, d, q, ind = self.attr.values()
-
         g = exp(-r*dt)
         if q is None:
             q = (1/g - d) / (u - d)
@@ -200,6 +199,6 @@ if __name__ == '__main__':
     tree = Binomial(r, T, dt, S0, u, d, y,q=0.5)
 
     verbose = True
-    print('{:10} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c, verbose=verbose)))
-    print('{:10} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta, verbose=verbose)))
+    print('{:10} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c)))
+    print('{:10} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta)))
     print('{:10} : {:.4f}'.format('bond', tree.price_bond(c)))
