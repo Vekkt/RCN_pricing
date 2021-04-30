@@ -37,6 +37,8 @@ class Binomial():
     def price_barrier_put(self, K, beta, type='KI', verbose=False):
         return self.price_barrier(lambda s: put(s, K), beta, type, verbose)
 
+        
+
     def price(self, payoff, type='E', dates=None, pen=0., verbose=False):
         r, T, dt, S0, y, u, d, q, _= self.attr.values()
         if type == 'B':
@@ -160,15 +162,16 @@ class Binomial():
 
     def price_RCN(self, alpha, c, beta=None, callable=False, verbose=False):
         S0 = self.attr['s0']
+        dt = self.attr['dt']
         K = alpha*S0
         # Basic RCN
         if beta is None and not callable:
-            bond = self.price_bond(c)
+            bond = self.price_bond(c*dt)
             put = self.price_put(K,verbose=verbose)[0, 0]
             return bond - put / S0
         # Barrier RCN
         if beta is not None and not callable:
-            bond = self.price_bond(c)
+            bond = self.price_bond(c*dt)
             ki_put = self.price_barrier_put(K, beta, type='KI',verbose=verbose)[0, 0]
             return bond - ki_put / S0
 
