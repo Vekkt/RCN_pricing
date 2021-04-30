@@ -79,7 +79,7 @@ def calibration():
             {'type': 'ineq', 'fun': lambda x: np.exp(r*dt) - x[1]},
             {'type': 'ineq', 'fun': lambda x: 1 - x[1]})
 
-    res = minimize(h, (1.1, 0.95), method='COBYLA', constraints=cons)
+    res = minimize(h, (1.0832, 0.9678), constraints=cons)
 
     if res.success:
         u, d = res.x
