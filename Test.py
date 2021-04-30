@@ -26,7 +26,7 @@ print('{:10} : {:.6f}'.format('brcn', tree.price_RCN(alpha, c*dt, beta, verbose=
 print('{:10} : {:.6f}'.format('bond', tree.price_bond(c*dt)))
 
 
-rcn_tree = rcn(r, dt, S0, y, u, d, c*dt, T, q=None)
+rcn_tree = rcn(r, dt, S0, y, u, d, c, T, q=None)
 print('\n{:10} : {:.6f}'.format(' rcn', rcn_tree.price_rcn(alpha, c*dt)))
 print('{:10} : {:.6f}'.format('brcn', rcn_tree.price_brcn(alpha, beta, c*dt)))
 print('{:10} : {:.6f}'.format('bond', rcn_tree.bond))
