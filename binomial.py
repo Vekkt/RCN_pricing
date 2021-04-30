@@ -9,7 +9,7 @@ class Binomial():
     def __init__(self, r, T, dt, S0, u, d, y=0., q=None):
         self.attr = dict()  # easier to unpack attributes later with a dict
         self.attr['r'] = r
-        self.attr['T'] = T
+        self.attr['T'] = T+1
         self.attr['dt'] = dt
         self.attr['s0'] = S0
         self.attr['y'] = y
@@ -47,7 +47,7 @@ class Binomial():
         p = np.zeros((T, T))
 
         for i in range(T):
-            S = S0 * u**(T-i-1) * d**i * (1 - y) ** (T-2)
+            S = S0 * u**(T-i-1) * d**i * (1 - y) ** (T-1)
             p[i, T-1] = payoff(S)
 
         for j in reversed(range(T-1)):
@@ -64,6 +64,7 @@ class Binomial():
                     p[i, j] = max(payoff(S), p[i, j])
                 if type == 'G':  # Game
                     p[i, j] = max(min(p[i, j], pen+payoff(S)), payoff(S))
+
         return p
 
     def underlying_price(self, beta=None):
@@ -114,7 +115,7 @@ class Binomial():
 
     def price_barrier(self, payoff, beta, type='KI'):
         underlying = self.underlying_price(beta)
-        r, T, dt, _, _, u, d, q, ind = self.attr.values()
+        r, T, dt, S0, _, u, d, q, ind = self.attr.values()
 
         g = exp(-r*dt)
         if q is None:
@@ -164,8 +165,8 @@ def put(S, K):
 
 
 if __name__ == '__main__':
-    T = 4
-    dt = 1/T
+    T = 3
+    dt = 0.25
     r = 0.02
     S0 = 100
     u = 2
@@ -174,16 +175,16 @@ if __name__ == '__main__':
     k = 100
     c = 0.1
     K = 100
-    alpha = 0.9
-    beta = 0.8
+    alpha = 0.7
+    beta = 1
 
     tree = Binomial(r, T, dt, S0, u, d, y)
     print("underlying asset price tree:")
     print(tree.underlying_price())
-    print("Knock-In put price tree:")
-    print(tree.price_barrier_put(k, beta, type='KI'))
-    print("Knock-In call price tree:")
-    print(tree.price_barrier_call(K, beta, type='KI'))
+    # print("Knock-In put price tree:")
+    # print(tree.price_barrier_put(k, beta, type='KI'))
+    # print("Knock-In call price tree:")
+    # print(tree.price_barrier_call(K, beta, type='KI'))
 
-    # print('{:15} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c)))
-    # print('{:15} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta)))
+    print('{:15} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c)))
+    print('{:15} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta)))
