@@ -22,10 +22,10 @@ class Binomial():
         T = self.attr['T']
         r = self.attr['r']
         # We assume continuous compounding
-        return sum([c * exp(-r * dt * t) for t in range(1, T)]) + (fv+c) * exp(-r * dt * T)
+        return sum([c * exp(-r * dt * t) for t in range(1, T-1)]) + (fv+c) * exp(-r * dt * (T-1))
 
-    def price_put(self, K, type='E', dates=None, pen=0.):
-        return self.price(lambda s: put(s, K), type, dates, pen)
+    def price_put(self, K, type='E', dates=None, pen=0., verbose=False):
+        return self.price(lambda s: put(s, K), type, dates, pen, verbose)
 
     def price_call(self, K, type='E', dates=None, pen=0.):
         return self.price(lambda s: call(s, K), type, dates, pen)
@@ -33,10 +33,10 @@ class Binomial():
     def price_barrier_call(self, K, beta, type='KI'):
         return self.price_barrier(lambda s: call(s, K), beta, type)
 
-    def price_barrier_put(self, K, beta, type='KI'):
-        return self.price_barrier(lambda s: put(s, K), beta, type)
+    def price_barrier_put(self, K, beta, type='KI', verbose=False):
+        return self.price_barrier(lambda s: put(s, K), beta, type, verbose)
 
-    def price(self, payoff, type='E', dates=None, pen=0.):
+    def price(self, payoff, type='E', dates=None, pen=0., verbose=False):
         r, T, dt, S0, y, u, d, q, _= self.attr.values()
         if type == 'B':
             assert(len(dates) >= 1 and (T-1) in dates)
@@ -45,9 +45,12 @@ class Binomial():
         if q is None:
             q = (1/g - d) / (u - d)
         p = np.zeros((T, T))
+        s_ex = np.zeros((T, T))
 
         for i in range(T):
+            # /!\ THE INDEX PAYS DIVIDENDS IN THE LAST PERIOD
             S = S0 * u**(T-i-1) * d**i * (1 - y) ** (T-1)
+            s_ex[i,T-1] = S
             p[i, T-1] = payoff(S)
 
         for j in reversed(range(T-1)):
@@ -58,16 +61,19 @@ class Binomial():
                 # So we need to remove the dividend ∂
                 # S_{t+1} = S^c_{t+1} * (1 - ∂)
                 S = S0 * u**(j-i) * d**i * (1-y)**j
+                s_ex[i,j] = S
                 if type == 'A':  # American
                     p[i, j] = max(payoff(S), p[i, j])
                 if type == 'B' and dates is not None and j in dates:  # Bermudan
                     p[i, j] = max(payoff(S), p[i, j])
                 if type == 'G':  # Game
                     p[i, j] = max(min(p[i, j], pen+payoff(S)), payoff(S))
-
+        if verbose:
+            print(s_ex)
+            print(p)
         return p
 
-    def underlying_price(self, beta=None):
+    def underlying_price(self, beta=None, verbose=False):
         r, T, dt, S0, y, u, d, q, _= self.attr.values()
 
         g = exp(-r*dt)
@@ -94,6 +100,7 @@ class Binomial():
                 # S^c_{t+1} = (U|D) * S_{t}
                 # So we need to remove the dividend ∂
                 # S_{t+1} = S^c_{t+1} * (1 - ∂)
+                # /!\ THE INDEX PAYS DIVIDENDS IN THE LAST PERIOD
                 s_ex[2*i, j+1] = u * s_ex[i, j] * (1-y)
                 s_ex[2*i+1, j+1] = d * s_ex[i, j] * (1-y)
 
@@ -110,11 +117,13 @@ class Binomial():
         if beta is not None:
             # remove duplicates and save
             self.attr['ind'] = list(set(ind.copy()))
-
+        
+        if verbose:
+            print(s_ex)
         return s_ex
 
-    def price_barrier(self, payoff, beta, type='KI'):
-        underlying = self.underlying_price(beta)
+    def price_barrier(self, payoff, beta, type='KI',verbose=False):
+        underlying = self.underlying_price(beta, verbose)
         r, T, dt, _, _, u, d, q, ind = self.attr.values()
 
         g = exp(-r*dt)
@@ -139,20 +148,23 @@ class Binomial():
         for j in reversed(range(T-1)):
             for i in range(2**j):
                 p[i, j] = g * (q*p[2*i, j+1] + (1-q)*p[2*i+1, j+1])
+
+        if verbose:
+            print(p)
         return p
 
-    def price_RCN(self, alpha, c, beta=None, callable=False):
+    def price_RCN(self, alpha, c, beta=None, callable=False, verbose=False):
         S0 = self.attr['s0']
         K = alpha*S0
         # Basic RCN
         if beta is None and not callable:
             bond = self.price_bond(c)
-            put = self.price_put(K)[0, 0]
+            put = self.price_put(K,verbose=verbose)[0, 0]
             return bond - put / S0
         # Barrier RCN
         if beta is not None and not callable:
             bond = self.price_bond(c)
-            ki_put = self.price_barrier_put(K, beta, type='KI')[0, 0]
+            ki_put = self.price_barrier_put(K, beta, type='KI',verbose=verbose)[0, 0]
             return bond - ki_put / S0
 
 
@@ -165,26 +177,21 @@ def put(S, K):
 
 
 if __name__ == '__main__':
-    T = 3
-    dt = 0.25
+    T = 2
+    dt = 1/12
     r = 0.02
     S0 = 100
     u = 2
     d = 0.5
     y = 0.01
     k = 100
-    c = 0.1
-    K = 100
-    alpha = 0.7
-    beta = 1
+    c = 0.
+    alpha = 1
+    beta = 0.6
 
-    tree = Binomial(r, T, dt, S0, u, d, y)
-    print("underlying asset price tree:")
-    print(tree.underlying_price())
-    # print("Knock-In put price tree:")
-    # print(tree.price_barrier_put(k, beta, type='KI'))
-    # print("Knock-In call price tree:")
-    # print(tree.price_barrier_call(K, beta, type='KI'))
+    tree = Binomial(r, T, dt, S0, u, d, y,q=0.5)
 
-    print('{:15} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c)))
-    print('{:15} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta)))
+    verbose = False
+    print('{:10} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c, verbose=verbose)))
+    print('{:10} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta, verbose=verbose)))
+    print('{:10} : {:.4f}'.format('bond', tree.price_bond(c)))
