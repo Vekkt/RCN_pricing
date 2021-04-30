@@ -77,7 +77,7 @@ class rcn():
                 if callable and dates is not None and j in dates:
                     # if RCN is callable select the minimum of the continuation price and full repayement
                     rcn[i, T - j] = min(rcn[i, T - j], 1 + c)
-        print(rcn)
+        # print(rcn)
         # subtract the coupon payment at date t=0 since no coupon is paid at this date
         return rcn[0, 0] - c
 
@@ -170,6 +170,6 @@ if __name__ == '__main__':
     rcn = tree.price_rcn(alpha=alpha, c=c, dates=dates)
     recomb_rcn = tree.recomb_rcn(alpha=alpha, c=c, dates=dates)
     #print('brcn=', brcn)
-    print(' rcn=', rcn)
-    print('recomb rcn=', recomb_rcn)
-    print('brcn=', brcn)
+    # print(' rcn=', rcn)
+    # print('recomb rcn=', recomb_rcn)
+    # print('brcn=', brcn)
