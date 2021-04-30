@@ -21,6 +21,7 @@ class Binomial():
     def price_bond(self, c, fv=1):
         T = self.attr['T']
         r = self.attr['r']
+        dt = self.attr['dt']
         # We assume continuous compounding
         return sum([c * exp(-r * dt * t) for t in range(1, T-1)]) + (fv+c) * exp(-r * dt * (T-1))
 
