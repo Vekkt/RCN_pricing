@@ -115,7 +115,7 @@ class Binomial():
 
     def price_barrier(self, payoff, beta, type='KI'):
         underlying = self.underlying_price(beta)
-        r, T, dt, S0, _, u, d, q, ind = self.attr.values()
+        r, T, dt, _, _, u, d, q, ind = self.attr.values()
 
         g = exp(-r*dt)
         if q is None:
