@@ -5,6 +5,7 @@ import statsmodels.formula.api as smf
 from scipy.optimize import minimize
 from binomial import Binomial
 import matplotlib.pyplot as plt
+from math import exp
 
 def get_data():
     P, C, K = [], [], []
@@ -41,7 +42,7 @@ def calibration():
 
     results = smf.ols('y ~ K', data=data).fit()
     b1, b2 = results.params
-    y, r = -np.log(1-b1 / S0), -np.log(b2)
+    y, r = -np.log(1-b1 / S0) / 12, -np.log(b2)
     print('{:15}{:.4f}'.format('Interest rate', r))
     print('{:15}{:.4f}'.format('Dividend yield', y))
     print('-'*30)
@@ -75,9 +76,8 @@ def calibration():
     I0 = 11118
 
     cons = ({'type': 'ineq', 'fun': lambda x: x[0] - np.exp(r*dt)},
-            {'type': 'ineq', 'fun': lambda x: x[0] - 1},
             {'type': 'ineq', 'fun': lambda x: np.exp(r*dt) - x[1]},
-            {'type': 'ineq', 'fun': lambda x: 1 - x[1]})
+            {'type': 'eq', 'fun': lambda x: (exp(r*dt) - x[1]) / (x[0] - x[1]) - 0.5})
 
     res = minimize(h, (1.0832, 0.9678), constraints=cons)
 
