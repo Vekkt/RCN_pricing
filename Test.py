@@ -11,16 +11,28 @@ from calibration import calibration
 # u = 1.0826
 # d = 0.9685
 # y = 0.0278
-# c = 0.1
-# alpha = 1
+c = 0.15
+alpha = 1.1
 
-T = 4
+T = 12
 dt = 1/T
-S0 = 11118
+i0 = 11118
 K = 10_000
-beta = 0.9
+beta = 1.11
 r, y, u, d = calibration()
-tree = Binomial(r, T, dt, S0, u, d, y)
+tree = Binomial(r, T, dt, i0, u, d, y)
 
-verbose = True
+verbose = False
 tree.price_barrier_put(K, beta, type='KI', verbose=verbose)
+
+tree = Binomial(r, T, dt, i0, u, d, y)
+
+print('{:10} : {:.4f}'.format(' rcn', tree.price_RCN(alpha, c)))
+print('{:10} : {:.4f}'.format('brcn', tree.price_RCN(alpha, c, beta)))
+print('{:10} : {:.4f}'.format('bond', tree.price_bond(c*dt)))
+
+print()
+note = rcn(r, dt, i0, y, u, d, c, T)
+print('{:10} : {:.4f}'.format(' rcn', note.price_rcn(alpha=alpha, c=c)))
+print('{:10} : {:.4f}'.format('brcn', note.price_brcn(alpha=alpha, beta=beta, c=c)))
+print('{:10} : {:.4f}'.format('bond', note.bond))

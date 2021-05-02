@@ -44,9 +44,9 @@ class rcn():
                 s_ex[2 * i + 1, j] = s_ex[i, j - 1] * d * (1 - y)
 
                 if beta:
-                    if s_ex[i, j - 1] <= beta * i0:
+                    if s_ex[i, j - 1] <= beta * i0: #I'm changing j-1 to j
                         self.ind.extend(
-                            [2**(T - (j - 1)) * i + n for n in range(2**(T - (j-1)))])
+                            [2**(T - (j - 1)) * i + n for n in range(2**(T - (j - 1)))])
                         #if the stock price is below the barrier then all the state this node leads to in the last period
                         #will be stored
 

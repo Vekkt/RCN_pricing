@@ -77,9 +77,10 @@ def calibration():
 
     cons = ({'type': 'ineq', 'fun': lambda x: x[0] - np.exp(r*dt)},
             {'type': 'ineq', 'fun': lambda x: np.exp(r*dt) - x[1]},
-            {'type': 'eq', 'fun': lambda x: (exp(r*dt) - x[1]) / (x[0] - x[1]) - 0.5})
+            {'type': 'eq', 'fun': lambda x: (exp(r*dt) - x[1]) / (x[0] - x[1]) - 0.5}
+            )
 
-    res = minimize(h, (1.0832, 0.9678), constraints=cons)
+    res = minimize(h, (1.0832, 0.9678), constraints=cons, method='L-BFGS-B')
 
     if res.success:
         u, d = res.x
