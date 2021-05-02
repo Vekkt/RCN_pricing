@@ -120,6 +120,10 @@ class Binomial():
                         ind.extend([i * L + k for k in range(L)])
 
         if beta is not None:
+            for i in range(2**(T-1)):
+                if (type == 'D' and s_ex[i, T-1] <= beta * S0 or
+                        type == 'U' and s_ex[i, T-1] >= beta * S0):
+                    ind.append(i)
             # remove duplicates and save
             self.attr['ind'] = list(set(ind.copy()))
         
