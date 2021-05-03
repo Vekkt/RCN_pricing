@@ -55,7 +55,6 @@ class rcn():
                     self.ind.append(i)
 
         self.ind = set(self.ind)  # set of indicies that hit the barrier
-        print(self.ind)
 
         return s_ex
 
