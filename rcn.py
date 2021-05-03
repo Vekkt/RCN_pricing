@@ -18,7 +18,7 @@ class rcn():
         self.div = div  # dividend yield
         self.u = u
         self.d = d
-        self.t_end = T   # maturity date in numbers of increment
+        self.t_end = T   #maturity
         c = c * dt
         self.bond = sum(c * exp(-r * dt * t) for t in range(1, self.t_end)) + (1 + c)*exp(-r*dt*self.t_end)  # bond price,never used
         if q is None:
@@ -35,23 +35,23 @@ class rcn():
         i0 = self.i0
         self.ind = []
 
-        s_ex = np.zeros([2 ** T, T + 1])
-        s_ex[0, 0] = self.i0
+        s_ex = np.zeros([2 ** T, T + 1])    #initialize non-recomb tree matrix
+        s_ex[0, 0] = self.i0    #initial price
 
         for j in range(1, T + 1):
             for i in np.nonzero(s_ex[:, j - 1])[0]:
-                s_ex[2 * i, j] = s_ex[i, j - 1] * u * (1 - y)
+                s_ex[2 * i, j] = s_ex[i, j - 1] * u * (1 - y)   #this formula ensures the constant prob. q of going
+                # up each month
                 s_ex[2 * i + 1, j] = s_ex[i, j - 1] * d * (1 - y)
 
-                if beta:
-                    if s_ex[i, j - 1] <= beta * i0: #I'm changing j-1 to j
-                        self.ind.extend(
-                            [2**(T - (j - 1)) * i + n for n in range(2**(T - (j - 1)))])
-                        #if the stock price is below the barrier then all the state this node leads to in the last period
-                        #will be stored
+                if beta:    #if barrier
+                    if s_ex[i, j - 1] <= beta * i0:
+                        self.ind.extend([2**(T - (j - 1)) * i + n for n in range(2**(T - (j - 1)))])
+                        #if the stock price is below the barrier then all the nodes this state leads to in the last
+                        # period will be stored
         if beta:
-            for i in range(2**T):
-                if s_ex[i, T] <= beta * i0:  # I'm changing j-1 to j
+            for i in range(2**T):   #loop for last period
+                if s_ex[i, T] <= beta * i0:
                     self.ind.append(i)
 
         self.ind = set(self.ind)  # set of indicies that hit the barrier
@@ -86,9 +86,9 @@ class rcn():
                     #     print('Exercise early')
                     # else:
                     #     print('Continue')
-        # subtract the coupon payment at date t=0 since no coupon is paid at this date
 
-        return rcn[0, 0] - c
+
+        return rcn[0, 0] - c     # subtract the coupon payment at date t=0 since no coupon is paid at this date
 
     def price_brcn(self, alpha, beta, c, dates=None):
         T = self.t_end
@@ -105,14 +105,12 @@ class rcn():
         if dates:
             self.callable = True
 
-        universal = set(i for i in range(2 ** T))  # set of all indicies
-        # set of indicies below strike at maturity
-        below_strike = set(np.argwhere(brcn[:, -1] < 1 + c).reshape(-1))
-        # set of indicies that did not hit barrier and below strike
-        mid = list((universal - self.ind) & below_strike)
-        brcn[mid, -1] = 1 + c  # payoff of paths that ended below
+        universal = set(i for i in range(2 ** T))  # set of all indices at maturity
+        below_strike = set(np.argwhere(brcn[:, -1] < 1 + c).reshape(-1))     # set of indices below strike at maturity
+        mid = list((universal - self.ind) & below_strike)  # set of indices that did not hit barrier and below strike
+        brcn[mid, -1] = 1 + c  # payoff of paths that ended below strike but never hit barrier
 
-        for j in range(1, T + 1):
+        for j in range(1, T + 1): #discount iteratively
             for i in range(2 ** (T - j)):
                 brcn[i, T - j] = np.exp(-r * dt) * (brcn[2 * i, T - j + 1]
                                                     * q + (1 - q) * brcn[2 * i + 1, T - j + 1]) + c
