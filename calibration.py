@@ -75,10 +75,10 @@ def calibration():
     dt = 1/12
     I0 = 11118
 
-    cons = ({'type': 'ineq', 'fun': lambda x: x[0] - np.exp(r*dt)},
-            {'type': 'ineq', 'fun': lambda x: np.exp(r*dt) - x[1]},
-            {'type': 'eq', 'fun': lambda x: (exp(r*dt) - x[1]) / (x[0] - x[1]) - 0.5}
-            )
+    # cons = ({'type': 'ineq', 'fun': lambda x: x[0] - np.exp(r*dt)},
+    #         {'type': 'ineq', 'fun': lambda x: np.exp(r*dt) - x[1]},
+    #         {'type': 'eq', 'fun': lambda x: (exp(r*dt) - x[1]) / (x[0] - x[1]) - 0.5}
+    #         )
 
     res = minimize(h, (1.1, 0.95), method='L-BFGS-B')
 
