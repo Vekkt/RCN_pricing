@@ -126,7 +126,6 @@ class Binomial():
                     ind.append(i)
             # remove duplicates and save
             self.attr['ind'] = list(set(ind.copy()))
-            print(self.attr['ind'])
         if verbose:
             print('Underlying price')
             print(s_ex)
