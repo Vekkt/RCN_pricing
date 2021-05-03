@@ -80,7 +80,7 @@ def calibration():
             {'type': 'eq', 'fun': lambda x: (exp(r*dt) - x[1]) / (x[0] - x[1]) - 0.5}
             )
 
-    res = minimize(h, (1.0832, 0.9678), constraints=cons, method='L-BFGS-B')
+    res = minimize(h, (1.1, 0.95), method='L-BFGS-B')
 
     if res.success:
         u, d = res.x
@@ -99,9 +99,9 @@ def calibration():
 
     sim = pd.concat([simc, simp], axis=1)
     sim.index.name = 'Strike'
-    print(sim)
-    plt.plot(sim)
-    plt.show()
+    # print(sim)
+    # plt.plot(sim)
+    # plt.show()
     return r, y, u, d
 
 if __name__ == '__main__':

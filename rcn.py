@@ -49,8 +49,13 @@ class rcn():
                             [2**(T - (j - 1)) * i + n for n in range(2**(T - (j - 1)))])
                         #if the stock price is below the barrier then all the state this node leads to in the last period
                         #will be stored
+        if beta:
+            for i in range(2**T):
+                if s_ex[i, T] <= beta * i0:  # I'm changing j-1 to j
+                    self.ind.append(i)
 
         self.ind = set(self.ind)  # set of indicies that hit the barrier
+        print(self.ind)
 
         return s_ex
 
