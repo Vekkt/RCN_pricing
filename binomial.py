@@ -49,12 +49,13 @@ class Binomial():
             q = (1/g - d) / (u - d)
         p = np.zeros((T, T))
         s_ex = np.zeros((T, T))
+        s_cum = np.zeros((T, T))
 
         for i in range(T):
             # /!\ THE INDEX PAYS DIVIDENDS IN THE LAST PERIOD
-            S = S0 * u**(T-i-1) * d**i * (1 - y) ** (T-1)
-            s_ex[i,T-1] = S
-            p[i, T-1] = payoff(S)
+            s_cum[i, T-1] = S0 * u**(T-i-1) * d**i
+            s_ex[i, T-1] = s_cum[i, T-1] * (1 - y) ** (T-1)
+            p[i, T-1] = payoff(s_ex[i, T-1])
 
         for j in reversed(range(T-1)):
             for i in range(j+1):
@@ -63,8 +64,10 @@ class Binomial():
                 # S^c_{t+1} = (U|D) * S_{t}
                 # So we need to remove the dividend ∂
                 # S_{t+1} = S^c_{t+1} * (1 - ∂)
-                S = S0 * u**(j-i) * d**i * (1-y)**j
-                s_ex[i,j] = S
+                s_cum[i, j] = S0 * u**(j-i) * d**i
+                s_ex[i, j] = s_cum[i, j] * (1-y)**j
+
+                S = s_ex[i, j]
                 if type == 'A': # American
                     p[i, j] = max(payoff(S), p[i, j])
                 if type == 'B' and dates is not None and j in dates: # Bermudan
@@ -72,7 +75,7 @@ class Binomial():
                 if type == 'G': # Game
                     p[i, j] = max(min(p[i, j], pen+payoff(S)), payoff(S))
 
-        pi1 = (p[0,1]-p[1,1])/(s_ex[0,1]-s_ex[1,1])
+        pi1 = (p[0, 1]-p[1, 1])/(s_cum[0, 1]-s_cum[1, 1])
         pf = [pi1, p[0,0] - pi1*S0]
 
         if verbose:
