@@ -34,3 +34,4 @@ Modules Needed
 -scipy
 -matplotlib
 -tqdm
+-pandas
