@@ -29,24 +29,83 @@ class Binomial():
 
     def price_put(self, K, type='KI', full=False, dates=None, pen=0.):
         if not full:
-            return self.price(lambda s: put(s, K), type, dates, pen)
-        return self.price_barrier(lambda s: put(s, K))
+            return self.price_recombining(lambda s: put(s, K), type, dates, pen)
+        return self.price_non_recombining(lambda s: put(s, K))
 
     def price_call(self, K, type='E', dates=None, pen=0.):
-        return self.price(lambda s: call(s, K), type, dates, pen)
+        return self.price_recombining(lambda s: call(s, K), type, dates, pen)
 
     def price_barrier_call(self, K, beta, type='KI'):
-        return self.price_barrier(lambda s: call(s, K), beta=beta, type=type)
+        return self.price_non_recombining(lambda s: call(s, K), beta=beta, type=type)
 
     def price_barrier_put(self, K, beta, type='KI'):
-        return self.price_barrier(lambda s: put(s, K), beta=beta, type=type)
+        return self.price_non_recombining(lambda s: put(s, K), beta=beta, type=type)
+
+
+    def price(self, payoff, type='E', dates=None, pen=0., underlying=None, beta=None, full=True):
+        if full:
+            return self.price_non_recombining(payoff, underlying, beta, type, dates)
+        else:
+            return self.price_recombining(payoff, type, dates, pen)
+
+
+
+# Compute the value of the underlying asset
+###############################################################################
+
+    def underlying_price(self, beta=None):
+        r, T, dt, S0, y, u, d, q, _ = self.attr.values()
+
+        g = exp(-r*dt)
+
+        if q is None:
+            q = (1/g - d) / (u - d)
+        if beta is not None:
+            ind = []
+
+        s_ex = np.zeros((2**(T-1), T))
+        s_ex[0, 0] = S0
+
+        # We populate the tree forward.
+        # From (i,j) to (2*i, j+1) and (2*i+1, j+1)
+        for j in range(T-1):
+            for i in range(2**j):
+                # We assume that
+                # S^c_{t+1} = (U|D) * S_{t}
+                # So we need to remove the dividend ∂
+                # S_{t+1} = S^c_{t+1} * (1 - ∂)
+                # /!\ THE INDEX PAYS DIVIDENDS IN THE LAST PERIOD
+                s_ex[2*i, j+1] = u * s_ex[i, j] * (1-y)
+                s_ex[2*i+1, j+1] = d * s_ex[i, j] * (1-y)
+
+                if beta is not None:
+                    # We add all leaves that come from a node
+                    # where the threshold has been breached
+                    if (beta <= 1 and s_ex[i, j] <= beta * S0 or
+                            beta > 1 and s_ex[i, j] >= beta * S0):
+                        # L is the number of leaves from this node
+                        # i * L is the index of the first leave
+                        L = 2**(T-1-j)
+                        ind.extend([i * L + k for k in range(L)])
+
+        if beta is not None:
+            for i in range(2**(T-1)):
+                if (beta <= 1 and s_ex[i, T-1] <= beta * S0 or
+                        beta > 1 and s_ex[i, T-1] >= beta * S0):
+                    ind.append(i)
+            # remove duplicates and save
+            self.attr['ind'] = list(set(ind.copy()))
+
+        return s_ex
+
+
 
 
 # Compute the price of a derivative with the given payoff
 # Using recombining trees
 ###############################################################################
 
-    def price(self, payoff, type='E', dates=None, pen=0.):
+    def price_recombining(self, payoff, type='E', dates=None, pen=0.):
         r, T, dt, S0, y, u, d, q, _= self.attr.values()
         if type == 'B':
             assert(len(dates) >= 1 and (T-1) in dates)
@@ -84,60 +143,11 @@ class Binomial():
         return p
 
 
-
-# Compute the value of the underlying asset
-###############################################################################
-
-    def underlying_price(self, beta=None):
-        r, T, dt, S0, y, u, d, q, _= self.attr.values()
-
-        g = exp(-r*dt)
-
-        if q is None: q = (1/g - d) / (u - d)
-        if beta is not None: ind = []
-
-        s_ex = np.zeros((2**(T-1), T))
-        s_ex[0, 0] = S0
-
-        # We populate the tree forward.
-        # From (i,j) to (2*i, j+1) and (2*i+1, j+1)
-        for j in range(T-1):
-            for i in range(2**j):
-                # We assume that
-                # S^c_{t+1} = (U|D) * S_{t}
-                # So we need to remove the dividend ∂
-                # S_{t+1} = S^c_{t+1} * (1 - ∂)
-                # /!\ THE INDEX PAYS DIVIDENDS IN THE LAST PERIOD
-                s_ex[2*i, j+1] = u * s_ex[i, j] * (1-y)
-                s_ex[2*i+1, j+1] = d * s_ex[i, j] * (1-y)
-
-                if beta is not None:
-                    # We add all leaves that come from a node
-                    # where the threshold has been breached
-                    if (beta <= 1 and s_ex[i, j] <= beta * S0 or
-                            beta > 1 and s_ex[i, j] >= beta * S0):
-                        # L is the number of leaves from this node
-                        # i * L is the index of the first leave
-                        L = 2**(T-1-j)
-                        ind.extend([i * L + k for k in range(L)])
-
-        if beta is not None:
-            for i in range(2**(T-1)):
-                if (beta <= 1 and s_ex[i, T-1] <= beta * S0 or
-                        beta > 1 and s_ex[i, T-1] >= beta * S0):
-                    ind.append(i)
-            # remove duplicates and save
-            self.attr['ind'] = list(set(ind.copy()))
-        
-        return s_ex
-
-
-
 # Compute the price of a derivative with the given payoff
-# Using recombining trees
+# Using non-recombining trees
 ###############################################################################
 
-    def price_barrier(self, payoff, underlying=None, beta=None, type='KI', dates=None):
+    def price_non_recombining(self, payoff, underlying=None, beta=None, type='KI', dates=None):
         if underlying is None: 
             self.underlying = self.underlying_price(beta)
             underlying = self.underlying
@@ -155,7 +165,8 @@ class Binomial():
         # the barrier has been breached at some point
         for i in range(2**(T-1)):
             p[i, T-1] = payoff(underlying[i, T-1])
-            if beta is not None and type != 'B':
+            
+            if beta is not None and type in ['KI', 'KO']:
                 if type[1] == 'I' and i not in ind:
                     p[i, T-1] = 0
                 elif type[1] == 'O' and i in ind:
@@ -176,7 +187,6 @@ class Binomial():
         S0 = self.attr['s0']
         dt = self.attr['dt']
         T  = self.attr['T']
-        y  = self.attr['y']
         K  = alpha*S0
 
         bond = self.price_bond(c*dt)
@@ -193,7 +203,7 @@ class Binomial():
 
         # Barrier RCN
         if beta is not None and not callable:
-            put   = self.price_barrier_put(K, beta, type='KI')
+            put  = self.price_barrier_put(K, beta, type='KI')
             price = bond - put[0, 0] / S0
 
             # ud = self.underlying
@@ -204,14 +214,14 @@ class Binomial():
         if beta is None and callable:
             put    = self.price_put(K, full=True)
             rcn    = bond - put / S0
-            ber    = self.price_barrier(payoff, underlying=rcn, type='B', dates=dates)
+            ber    = self.price_non_recombining(payoff, underlying=rcn, type='B', dates=dates)
             price  = rcn[0, 0] - ber[0, 0]
 
         # Callable Barrier RCN
         if beta is not None and callable:
             put    = self.price_barrier_put(K, beta, type='KI')
             brcn   = bond - put / S0
-            ber    = self.price_barrier(payoff, underlying=brcn, type='B', dates=dates)
+            ber    = self.price_non_recombining(payoff, underlying=brcn, type='B', dates=dates)
             price  = brcn[0, 0] - ber[0, 0]
 
         return price
