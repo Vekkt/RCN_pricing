@@ -27,6 +27,7 @@ print('{:10} : {:.4f}'.format('bond', tree.price_bond(c*dt)))
 print()
 note = rcn(r, dt, i0, y, u, d, c, T)
 print('{:10} : {:.4f}'.format(' rcn', note.price_rcn(alpha=alpha, c=c)))
+print(note.price_rcn(alpha=alpha, c=c, replication_strategy=True))
 print('{:10} : {:.4f}'.format(
     'brcn', note.price_brcn(alpha=alpha, beta=beta, c=c)))
 print('{:10} : {:.4f}'.format('bond', note.bond))

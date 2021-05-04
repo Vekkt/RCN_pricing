@@ -25,7 +25,6 @@ class rcn():
             q = (exp(r * dt) - d) / (u-d)
         self.q = q
 
-
     def stock_tree(self, beta=0):
         """Simulates the underlying stock"""
         T = self.t_end
@@ -61,7 +60,7 @@ class rcn():
     def payoff(self, s, alpha):
         return 1 - np.maximum(0, alpha - s / self.i0)
 
-    def price_rcn(self, alpha, c, dates=None):
+    def price_rcn(self, alpha, c, dates=None, replication_strategy=False):
         T = self.t_end
         r = self.r
         dt = self.dt
@@ -88,9 +87,14 @@ class rcn():
                     #     print('Continue')
 
 
-        return rcn[0, 0] - c     # subtract the coupon payment at date t=0 since no coupon is paid at this date
+        if replication_strategy:   #replication portfolio at initial date
+            pi1 = (rcn[0, 1] - rcn[1, 1]) / ((s[0, 1] - s[1, 1]) / (1 - self.div))
+            pf = [pi1, rcn[0, 0] - c - pi1 * self.i0]
+            return rcn[0, 0] - c, pf
+        else:
+            return rcn[0, 0] - c     # subtract the coupon payment at date t=0 since no coupon is paid at this date
 
-    def price_brcn(self, alpha, beta, c, dates=None):
+    def price_brcn(self, alpha, beta, c, dates=None, replication_strategy=False):
         T = self.t_end
         q = self.q
         r = self.r
@@ -120,8 +124,12 @@ class rcn():
                     # if BRCN is callable select the minimum of the continuation price and full repayement
                     brcn[i, T - j] = min(brcn[i, T - j], 1 + c)
 
-        # subtract the coupon payment at date t=0 since no coupon is paid at this date
-        return brcn[0, 0] - c
+        if replication_strategy:  # replication portfolio at initial date
+            pi1 = (brcn[0, 1] - brcn[1, 1]) / ((s[0, 1] - s[1, 1]) / (1 - self.div))   #risky
+            pf = [pi1, brcn[0, 0] - c - pi1 * self.i0]
+            return brcn[0, 0] - c, pf
+        else:
+            return brcn[0, 0] - c  # subtract the coupon payment at date t=0 since no coupon is paid at this date
 
     def recomb_rcn(self, alpha, c, dates=None):
         T = self.t_end
@@ -169,7 +177,6 @@ if __name__ == '__main__':
     K = 100
     from binomial import Binomial
 
-    dates = [i for i in range(int(T/dt)+1)]
     #dates = []
     note = rcn(r, dt, S0, y, u, d, c, T=12, q=None)
     T = 12
@@ -182,4 +189,6 @@ if __name__ == '__main__':
     print('Price of callable simple RCN {:.6f}\nPrice of callable barrier RCN {:.6f}'.format(RCN, BRCN))
     print(note.price_rcn(alpha, c))
     print(note.price_brcn(alpha, beta, c))
+    print(note.price_brcn(alpha=alpha, c=c, beta=beta, dates=dates, replication_strategy=True))
+    print(note.price_rcn(alpha=alpha, c=c, dates=dates, replication_strategy=True))
 
